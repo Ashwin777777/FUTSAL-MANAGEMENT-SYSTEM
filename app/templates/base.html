@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Futsal Management System{% endblock %}</title>
+    <!-- Custom Style CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-weight/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Flash Messages -->
+    <div class="alert-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        <span><i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'danger' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %}"></i> {{ message }}</span>
+                        <button style="background:none; border:none; color:inherit; cursor:pointer;" onclick="dismissAlert(this)"><i class="fas fa-times"></i></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <a href="{{ url_for('main.index') }}" class="nav-brand">
+            <i class="fas fa-futbol"></i> Futsal Hub
+        </a>
+        <ul class="nav-links">
+            <li><a href="{{ url_for('main.index') }}" class="nav-link">Home</a></li>
+            {% if current_user.is_authenticated %}
+                {% if current_user.role in ['admin', 'staff'] %}
+                    <li><a href="{{ url_for('admin.dashboard') }}" class="nav-link">Admin Panel</a></li>
+                    <li><a href="{{ url_for('admin.courts') }}" class="nav-link">Courts</a></li>
+                    <li><a href="{{ url_for('admin.bookings') }}" class="nav-link">Bookings</a></li>
+                    <li><a href="{{ url_for('admin.equipment') }}" class="nav-link">Equipment</a></li>
+                    <li><a href="{{ url_for('admin.maintenance') }}" class="nav-link">Maintenance</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('main.dashboard') }}" class="nav-link">Dashboard</a></li>
+                    <li><a href="{{ url_for('booking.history') }}" class="nav-link">My Bookings</a></li>
+                {% endif %}
+                <li><a href="{{ url_for('main.profile') }}" class="nav-link"><i class="fas fa-user-circle"></i> Profile</a></li>
+                <li><a href="{{ url_for('auth.logout') }}" class="nav-link nav-btn" style="border-radius: 8px;">Logout</a></li>
+            {% else %}
+                <li><a href="{{ url_for('auth.login') }}" class="nav-link">Login</a></li>
+                <li><a href="{{ url_for('auth.register') }}" class="nav-link nav-btn" style="border-radius: 8px;">Register</a></li>
+            {% endif %}
+            <li>
+                <button class="theme-toggle" id="theme-toggle-btn" aria-label="Toggle Theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 Futsal Management System. Designed for ultimate sports experiences. All rights reserved.</p>
+    </footer>
+
+    <!-- Main JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
