@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}Register | Futsal Management System{% endblock %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 3rem auto;">
+    <div class="glass-panel">
+        <h2 style="text-align: center; margin-bottom: 2rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+            <i class="fas fa-user-plus text-primary"></i> Create an Account
+        </h2>
+        
+        <form method="POST" action="{{ url_for('auth.register') }}">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" class="form-control" placeholder="Choose a username" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" class="form-control" placeholder="Enter your email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" id="phone" name="phone" class="form-control" placeholder="Enter your phone number">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" class="form-control" placeholder="Create a password" required>
+            </div>
+
+            <div class="form-group">
+                <label for="role">Account Type</label>
+                <select id="role" name="role" class="form-control" style="background: rgba(15,23,42,0.6);">
+                    <option value="customer">Customer / Player</option>
+                    <option value="staff">Staff Member</option>
+                    <option value="admin">Administrator</option>
+                </select>
+            </div>
+
+            <!-- Conditional Admin Key Field -->
+            <div class="form-group" id="admin-key-group" style="display: none;">
+                <label for="admin_key">Registration Authorization Key</label>
+                <input type="password" id="admin_key" name="admin_key" class="form-control" placeholder="Enter registration key">
+                <small style="color: var(--text-secondary); font-size: 0.75rem;">Only required for Staff and Admin accounts.</small>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                <i class="fas fa-user-check"></i> Register
+            </button>
+        </form>
+        
+        <div style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-secondary);">
+            Already have an account? <a href="{{ url_for('auth.login') }}" style="color: var(--secondary); font-weight: 600;">Sign in here</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const roleSelect = document.getElementById('role');
+    const adminKeyGroup = document.getElementById('admin-key-group');
+    const adminKeyInput = document.getElementById('admin_key');
+
+    roleSelect.addEventListener('change', () => {
+        if (roleSelect.value === 'admin' || roleSelect.value === 'staff') {
+            adminKeyGroup.style.display = 'flex';
+            adminKeyInput.setAttribute('required', 'required');
+        } else {
+            adminKeyGroup.style.display = 'none';
+            adminKeyInput.removeAttribute('required');
+        }
+    });
+});
+</script>
+{% endblock %}
