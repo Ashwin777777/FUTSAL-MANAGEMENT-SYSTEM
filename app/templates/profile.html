@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile | Futsal Management System{% endblock %}
+
+{% block content %}
+<div style="max-width: 700px; margin: 2rem auto;">
+    <h2 style="margin-bottom: 2rem;"><i class="fas fa-id-card text-primary"></i> Profile Settings</h2>
+    
+    <div class="glass-panel">
+        <form method="POST" action="{{ url_for('main.profile') }}">
+            <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem; border-bottom: 1px solid var(--panel-border); padding-bottom: 1.5rem;">
+                <div style="width: 70px; height: 70px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 800; color: white;">
+                    {{ current_user.username[0].upper() }}
+                </div>
+                <div>
+                    <h3>{{ current_user.username }}</h3>
+                    <p style="color: var(--text-secondary); text-transform: uppercase; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.05em;">
+                        Role: <span class="badge badge-info">{{ current_user.role }}</span>
+                    </p>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" class="form-control" value="{{ current_user.username }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" class="form-control" value="{{ current_user.email }}" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" id="phone" name="phone" class="form-control" value="{{ current_user.phone or '' }}" placeholder="No phone number added">
+            </div>
+
+            <h3 style="margin: 2.5rem 0 1rem 0; border-top: 1px solid var(--panel-border); padding-top: 2rem; font-size: 1.25rem;">
+                <i class="fas fa-key text-secondary"></i> Change Password
+            </h3>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">Leave these fields blank if you do not want to change your password.</p>
+
+            <div class="form-group">
+                <label for="current_password">Current Password</label>
+                <input type="password" id="current_password" name="current_password" class="form-control" placeholder="Enter current password">
+            </div>
+
+            <div class="form-group">
+                <label for="new_password">New Password</label>
+                <input type="password" id="new_password" name="new_password" class="form-control" placeholder="Enter new password">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">
+                <i class="fas fa-save"></i> Save Changes
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
