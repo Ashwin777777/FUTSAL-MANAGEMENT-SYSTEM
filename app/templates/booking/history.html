@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Booking History | Futsal Hub{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2.5rem;">
+    <h2><i class="fas fa-history text-primary"></i> Your Booking History</h2>
+    <p style="color: var(--text-secondary);">Review your past, active, and cancelled bookings.</p>
+</div>
+
+<div class="glass-panel" style="padding: 1.5rem;">
+    {% if bookings %}
+        <div class="table-responsive">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Court</th>
+                        <th>Date</th>
+                        <th>Time Slot</th>
+                        <th>Paid Amount</th>
+                        <th>Status</th>
+                        <th style="text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in bookings %}
+                        <tr>
+                            <td>#{{ booking.id }}</td>
+                            <td style="font-weight: 600;">{{ booking.court.name }}</td>
+                            <td>{{ booking.date.strftime('%b %d, %Y') }}</td>
+                            <td>{{ "%02d:00" | format(booking.start_time) }} - {{ "%02d:00" | format(booking.end_time) }}</td>
+                            <td style="font-weight: 700; color: var(--primary);">Rs. {{ booking.total_price }}</td>
+                            <td>
+                                <span class="badge {% if booking.status == 'confirmed' %}badge-success{% elif booking.status == 'pending' %}badge-warning{% else %}badge-danger{% endif %}">
+                                    {{ booking.status }}
+                                </span>
+                            </td>
+                            <td style="text-align: right; display: flex; gap: 0.5rem; justify-content: flex-end; align-items: center;">
+                                <a href="{{ url_for('booking.receipt', booking_id=booking.id) }}" class="btn btn-glass" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                                    <i class="fas fa-file-invoice"></i> Receipt
+                                </a>
+                                
+                                {% if booking.status == 'confirmed' %}
+                                    <form method="POST" action="{{ url_for('booking.cancel_booking', booking_id=booking.id) }}" onsubmit="return confirm('Are you sure you want to cancel this booking? This action cannot be undone.');">
+                                        <button type="submit" class="btn btn-danger" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                                            <i class="fas fa-times-circle"></i> Cancel
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div style="text-align: center; padding: 3rem 1rem;">
+            <i class="far fa-calendar-times" style="font-size: 3rem; color: var(--text-secondary); margin-bottom: 1.5rem; display: block;"></i>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">No booking history found.</p>
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary"><i class="fas fa-calendar-plus"></i> Book a Court Now</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
