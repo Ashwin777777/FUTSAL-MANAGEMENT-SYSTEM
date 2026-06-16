@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+
+{% block title %}Book {{ court.name }} | Futsal Hub{% endblock %}
+
+{% block content %}
+<input type="hidden" id="court-id" value="{{ court.id }}">
+
+<div style="margin-bottom: 2rem;">
+    <a href="{{ url_for('main.dashboard') }}" style="color: var(--text-secondary); font-size: 0.9rem;"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+    <h2 style="margin-top: 1rem; display: flex; align-items: center; gap: 0.75rem;">
+        <i class="fas fa-calendar-plus text-primary"></i> Book Arena: {{ court.name }}
+    </h2>
+</div>
+
+<div class="grid-2">
+    <!-- Left Column: Scheduler & Add-ons -->
+    <div style="display: flex; flex-direction: column; gap: 2rem;">
+        <!-- Step 1: Select Date & Time -->
+        <div class="glass-panel">
+            <h3 style="margin-bottom: 1.5rem;"><span style="color: var(--primary);">1.</span> Select Date & Time</h3>
+            
+            <div class="form-group">
+                <label for="booking-date">Choose Date</label>
+                <input type="date" id="booking-date" class="form-control" value="{{ today }}" min="{{ today }}" required>
+            </div>
+            
+            <label style="font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.5rem;">Select Time Slots</label>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem;">Click a starting slot and then click an ending slot to select a range. Peak hours are marked with <i class="fas fa-fire text-warning"></i>.</p>
+            
+            <div id="slots-container" class="slot-grid">
+                <!-- Loaded via JS -->
+            </div>
+        </div>
+
+        <!-- Step 2: Equipment Rentals -->
+        <div class="glass-panel">
+            <h3 style="margin-bottom: 1.5rem;"><span style="color: var(--primary);">2.</span> Equipment Rentals (Optional)</h3>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.5rem;">Need extra gear? Add items to your session. Paid upon booking.</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                {% for eq in equipments %}
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; border-bottom: 1px solid var(--panel-border);">
+                        <div>
+                            <h4 style="font-size: 0.95rem;">{{ eq.name }}</h4>
+                            <p style="font-size: 0.8rem; color: var(--text-secondary);">Rs. {{ eq.rental_price }} per unit | Stock: {{ eq.stock }}</p>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <label for="rental_qty_{{ eq.id }}" style="font-size: 0.8rem; color: var(--text-secondary);">Qty:</label>
+                            <input type="number" id="rental_qty_{{ eq.id }}" name="rental_qty_{{ eq.id }}" class="form-control rental-qty-input" data-eq-id="{{ eq.id }}" value="0" min="0" max="{{ eq.stock }}" style="width: 70px; padding: 0.4rem 0.6rem;">
+                        </div>
+                    </div>
+                {% else %}
+                    <p style="font-size: 0.85rem; color: var(--text-secondary);">No equipment available for rental right now.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Checkout Summary (sticky) -->
+    <div style="position: sticky; top: 6rem; height: fit-content;">
+        <div class="glass-panel" id="booking-summary-panel">
+            <h3 style="margin-bottom: 1.5rem;"><i class="fas fa-receipt text-secondary"></i> Booking Summary</h3>
+            
+            <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--panel-border);">
+                <img src="{{ court.image_url or 'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=300' }}" alt="{{ court.name }}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;">
+                <div>
+                    <h4 style="font-size: 1.1rem;">{{ court.name }}</h4>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary);">{{ court.type }} &bull; {{ court.turf_type }}</p>
+                </div>
+            </div>
+
+            <!-- Booking form -->
+            <form id="confirm-booking-form" method="POST" action="{{ url_for('booking.book_confirm', court_id=court.id) }}">
+                <input type="hidden" name="date" id="form-date">
+                <input type="hidden" name="start_time" id="start-time-input">
+                <input type="hidden" name="end_time" id="end-time-input">
+                
+                <!-- Explicitly copy rental inputs values during submit via simple JS -->
+                <div id="hidden-rental-inputs"></div>
+
+                <!-- Promo Code -->
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label for="promo-code-input">Promo / Discount Code</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" id="promo-code-input" name="promo_code" class="form-control" placeholder="e.g. WELCOME10" style="text-transform: uppercase;">
+                        <button class="btn btn-glass" id="apply-promo-btn" style="padding: 0.75rem 1rem;">Apply</button>
+                    </div>
+                </div>
+
+                <!-- Payment Method -->
+                <div class="form-group" style="margin-bottom: 2rem;">
+                    <label for="payment_method">Payment Method</label>
+                    <select id="payment_method" name="payment_method" class="form-control" style="background: rgba(15,23,42,0.6);">
+                        <option value="Cash">Pay at Counter (Cash)</option>
+                        <option value="Card">Credit/Debit Card (Simulated)</option>
+                        <option value="Wallet">Digital Wallet (Simulated)</option>
+                    </select>
+                </div>
+
+                <!-- Dynamic Pricing Summary -->
+                <div id="checkout-section" style="display: none; margin-bottom: 2rem; background: rgba(0,0,0,0.15); padding: 1rem; border-radius: 12px; border: 1px solid var(--panel-border);">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                        <span style="color: var(--text-secondary);">Court Booking Cost:</span>
+                        <span id="summary-court-cost" style="font-weight: 600;">Rs. 0.00</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                        <span style="color: var(--text-secondary);">Equipment Rentals:</span>
+                        <span id="summary-rental-cost" style="font-weight: 600;">Rs. 0.00</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                        <span style="color: var(--text-secondary);">Discount:</span>
+                        <span id="summary-discount" class="text-success" style="font-weight: 600;">-Rs. 0.00</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 1.15rem; font-weight: 800; border-top: 1px dashed var(--panel-border); padding-top: 0.75rem; margin-top: 0.5rem;">
+                        <span>Total:</span>
+                        <span id="summary-total" style="color: var(--primary);">Rs. 0.00</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; font-size: 1.05rem;">
+                    <i class="fas fa-check-double"></i> Confirm & Book
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/booking.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('confirm-booking-form');
+    const dateInput = document.getElementById('booking-date');
+    const formDate = document.getElementById('form-date');
+    const hiddenRentals = document.getElementById('hidden-rental-inputs');
+
+    // Make sure the hidden date input mirrors the datepicker
+    formDate.value = dateInput.value;
+    dateInput.addEventListener('change', () => {
+        formDate.value = dateInput.value;
+    });
+
+    // Populate rental inputs into the form before submit
+    form.addEventListener('submit', (e) => {
+        hiddenRentals.innerHTML = '';
+        const rentalInputs = document.querySelectorAll('.rental-qty-input');
+        
+        rentalInputs.forEach(input => {
+            const qty = parseInt(input.value) || 0;
+            if (qty > 0) {
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = input.name;
+                hiddenInput.value = qty;
+                hiddenRentals.appendChild(hiddenInput);
+            }
+        });
+        
+        // Form validation
+        const start = document.getElementById('start-time-input').value;
+        const end = document.getElementById('end-time-input').value;
+        if (!start || !end) {
+            e.preventDefault();
+            alert('Please select a valid time range from the calendar.');
+        }
+    });
+});
+</script>
+{% endblock %}
