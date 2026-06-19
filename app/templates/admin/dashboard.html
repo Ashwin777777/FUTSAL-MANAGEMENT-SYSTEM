@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard | Futsal Hub{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h2><i class="fas fa-chart-line text-primary"></i> Administrative Dashboard</h2>
+        <p style="color: var(--text-secondary);">Real-time booking metrics, revenue stats, and system analytics.</p>
+    </div>
+    <span class="badge badge-info" style="font-size: 0.85rem; padding: 0.5rem 1rem;">System Mode: Operational</span>
+</div>
+
+<!-- Stats Cards Grid -->
+<div class="grid-4" style="margin-bottom: 3rem;">
+    <div class="glass-card stat-box">
+        <div class="stat-icon primary">
+            <i class="fas fa-dollar-sign"></i>
+        </div>
+        <div class="stat-details">
+            <h3>Rs. {{ analytics.total_revenue }}</h3>
+            <p>Total Revenue</p>
+        </div>
+    </div>
+    
+    <div class="glass-card stat-box">
+        <div class="stat-icon secondary">
+            <i class="fas fa-calendar-check"></i>
+        </div>
+        <div class="stat-details">
+            <h3>{{ analytics.total_bookings }}</h3>
+            <p>Total Bookings</p>
+        </div>
+    </div>
+    
+    <div class="glass-card stat-box">
+        <div class="stat-icon accent">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="stat-details">
+            <h3>{{ analytics.total_users }}</h3>
+            <p>Customers</p>
+        </div>
+    </div>
+    
+    <div class="glass-card stat-box">
+        <div class="stat-icon" style="background: var(--success); box-shadow: 0 4px 14px var(--primary-glow);">
+            <i class="fas fa-futbol"></i>
+        </div>
+        <div class="stat-details">
+            <h3>{{ analytics.active_courts }}</h3>
+            <p>Active Courts</p>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="grid-2" style="margin-bottom: 3rem;">
+    <div class="glass-panel" style="padding: 1.5rem;">
+        <h3 style="margin-bottom: 1.5rem; font-size: 1.15rem;"><i class="fas fa-chart-bar text-primary"></i> Bookings by Arena</h3>
+        <div style="position: relative; height: 300px; width: 100%;">
+            <canvas id="courtChart"></canvas>
+        </div>
+    </div>
+    
+    <div class="glass-panel" style="padding: 1.5rem;">
+        <h3 style="margin-bottom: 1.5rem; font-size: 1.15rem;"><i class="fas fa-chart-area text-secondary"></i> Last 7 Days Revenue ($)</h3>
+        <div style="position: relative; height: 300px; width: 100%;">
+            <canvas id="revenueChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity Table -->
+<div class="glass-panel" style="padding: 1.5rem;">
+    <h3 style="margin-bottom: 1.5rem; font-size: 1.15rem;"><i class="fas fa-history text-accent"></i> Recent Bookings</h3>
+    <div class="table-responsive">
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th>Booking ID</th>
+                    <th>Customer</th>
+                    <th>Court</th>
+                    <th>Date</th>
+                    <th>Time Slot</th>
+                    <th>Total Price</th>
+                    <th>Status</th>
+                    <th>Receipt</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in analytics.recent_bookings %}
+                    <tr>
+                        <td>#{{ b.id }}</td>
+                        <td style="font-weight: 600;">{{ b.customer.username }}</td>
+                        <td>{{ b.court.name }}</td>
+                        <td>{{ b.date.strftime('%b %d, %Y') }}</td>
+                        <td>{{ "%02d:00" | format(b.start_time) }} - {{ "%02d:00" | format(b.end_time) }}</td>
+                        <td style="font-weight: 700; color: var(--primary);">Rs. {{ b.total_price }}</td>
+                        <td>
+                            <span class="badge {% if b.status == 'confirmed' %}badge-success{% elif b.status == 'pending' %}badge-warning{% else %}badge-danger{% endif %}">
+                                {{ b.status }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('booking.receipt', booking_id=b.id) }}" class="btn btn-glass" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">
+                                <i class="fas fa-external-link-alt"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="8" style="text-align: center;">No bookings recorded yet.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Helper to get CSS variables
+    const getStyle = (prop) => getComputedStyle(document.body).getPropertyValue(prop).trim();
+    
+    // Court Chart
+    const courtCtx = document.getElementById('courtChart').getContext('2d');
+    new Chart(courtCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ analytics.court_labels|tojson }},
+            datasets: [{
+                label: 'Bookings',
+                data: {{ analytics.court_counts|tojson }},
+                backgroundColor: 'rgba(16, 185, 129, 0.6)',
+                borderColor: '#10b981',
+                borderWidth: 1,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+
+    // Revenue Chart
+    const revCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(revCtx, {
+        type: 'line',
+        data: {
+            labels: {{ analytics.date_labels|tojson }},
+            datasets: [{
+                label: 'Revenue (Rs.)',
+                data: {{ analytics.daily_revenue|tojson }},
+                backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                borderColor: '#3b82f6',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
