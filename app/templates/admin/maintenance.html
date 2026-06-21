@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block title %}Court Maintenance | Admin Panel{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2.5rem;">
+    <h2><i class="fas fa-tools text-primary"></i> Court Maintenance & Scheduling</h2>
+    <p style="color: var(--text-secondary);">Block off courts for cleaning, repairs, or private events, preventing customer bookings.</p>
+</div>
+
+<div class="grid-2">
+    <!-- Schedule Maintenance Form -->
+    <div class="glass-panel" style="height: fit-content;">
+        <h3 style="margin-bottom: 1.5rem;"><i class="fas fa-plus text-secondary"></i> Block Time for Maintenance</h3>
+        
+        <form method="POST" action="{{ url_for('admin.maintenance') }}">
+            <input type="hidden" name="action" value="add">
+            
+            <div class="form-group">
+                <label for="court_id">Select Futsal Court</label>
+                <select id="court_id" name="court_id" class="form-control" style="background: rgba(15,23,42,0.6);" required>
+                    {% for court in courts %}
+                        <option value="{{ court.id }}">{{ court.name }} ({{ court.type }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="date">Choose Date</label>
+                <input type="date" id="date" name="date" class="form-control" required>
+            </div>
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="start_time">Start Hour (24-hour)</label>
+                    <select id="start_time" name="start_time" class="form-control" style="background: rgba(15,23,42,0.6);" required>
+                        {% for hour in range(6, 23) %}
+                            <option value="{{ hour }}">{{ "%02d:00" | format(hour) }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="end_time">End Hour (24-hour)</label>
+                    <select id="end_time" name="end_time" class="form-control" style="background: rgba(15,23,42,0.6);" required>
+                        {% for hour in range(7, 24) %}
+                            <option value="{{ hour }}">{{ "%02d:00" | format(hour) }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="reason">Reason for Maintenance</label>
+                <input type="text" id="reason" name="reason" class="form-control" placeholder="e.g. Turf cleaning, Net repair, Light bulb replacement" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                <i class="fas fa-lock"></i> Block Selected Hours
+            </button>
+        </form>
+    </div>
+
+    <!-- Active Maintenance Windows -->
+    <div class="glass-panel">
+        <h3 style="margin-bottom: 1.5rem;"><i class="fas fa-calendar-times text-accent"></i> Scheduled Blocks</h3>
+        
+        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+            {% for maint in maintenance %}
+                <div class="glass-card" style="padding: 1.25rem; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h4 style="font-size: 1.05rem;">{{ maint.court.name }}</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                            <i class="far fa-calendar-alt"></i> {{ maint.date.strftime('%b %d, %Y') }}
+                        </p>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary);">
+                            <i class="far fa-clock"></i> {{ "%02d:00" | format(maint.start_time) }} - {{ "%02d:00" | format(maint.end_time) }}
+                        </p>
+                        <p style="font-size: 0.85rem; font-weight: 600; color: var(--accent); margin-top: 0.5rem;">
+                            <i class="fas fa-info-circle"></i> {{ maint.reason }}
+                        </p>
+                    </div>
+                    
+                    <form method="POST" action="{{ url_for('admin.maintenance') }}" onsubmit="return confirm('Are you sure you want to remove this maintenance block?');">
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="maintenance_id" value="{{ maint.id }}">
+                        <button type="submit" class="btn btn-danger" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                            <i class="fas fa-trash-alt"></i> Remove
+                        </button>
+                    </form>
+                </div>
+            {% else %}
+                <div style="text-align: center; padding: 2rem; border: 1px dashed var(--panel-border); border-radius: 12px;">
+                    <p style="color: var(--text-secondary);">No maintenance blocks scheduled.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Set default date to today
+    const dateInput = document.getElementById('date');
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.value = today;
+    dateInput.min = today;
+    
+    // Ensure end hour is after start hour
+    const startSelect = document.getElementById('start_time');
+    const endSelect = document.getElementById('end_time');
+    
+    startSelect.addEventListener('change', () => {
+        const startVal = parseInt(startSelect.value);
+        endSelect.value = startVal + 1;
+        
+        // Disable end hours before start hour
+        Array.from(endSelect.options).forEach(opt => {
+            const optVal = parseInt(opt.value);
+            if (optVal <= startVal) {
+                opt.disabled = true;
+            } else {
+                opt.disabled = false;
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
