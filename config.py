@@ -18,3 +18,5 @@ class Config:
     PEAK_END_HOUR = 22
     PEAK_MULTIPLIER = 1.25  # 25% extra charge for peak hours
     WEEKEND_MULTIPLIER = 1.15  # 15% extra charge for weekends (Saturday, Sunday)
+
+# Git simulation edit: mysql_config
