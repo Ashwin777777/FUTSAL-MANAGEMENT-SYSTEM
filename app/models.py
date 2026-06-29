@@ -171,3 +171,5 @@ class Announcement(db.Model):
 
     def __repr__(self):
         return f"<Announcement {self.title}>"
+
+# Git simulation edit: model_to_dict
