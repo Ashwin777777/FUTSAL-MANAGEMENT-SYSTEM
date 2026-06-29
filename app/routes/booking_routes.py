@@ -123,3 +123,5 @@ def cancel_booking(booking_id):
     else:
         flash(message, "danger")
     return redirect(url_for('booking.history'))
+
+# Git simulation edit: route_fix
