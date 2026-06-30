@@ -59,3 +59,5 @@ class MainController:
         db.session.add(review)
         db.session.commit()
         return True, "Thank you for your feedback!"
+
+# Git simulation edit: doc_main
