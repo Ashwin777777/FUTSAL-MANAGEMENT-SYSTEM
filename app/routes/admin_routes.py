@@ -117,3 +117,5 @@ def maintenance():
     all_maintenance = Maintenance.query.order_by(Maintenance.date.desc()).all()
     courts = Court.query.filter_by(status='active').all()
     return render_template('admin/maintenance.html', maintenance=all_maintenance, courts=courts)
+
+# Git simulation edit: clean_admin_routes
