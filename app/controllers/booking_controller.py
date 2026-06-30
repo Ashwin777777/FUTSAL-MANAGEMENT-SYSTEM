@@ -268,3 +268,5 @@ class BookingController:
             
         db.session.commit()
         return True, "Booking cancelled successfully."
+
+# Git simulation edit: doc_book
