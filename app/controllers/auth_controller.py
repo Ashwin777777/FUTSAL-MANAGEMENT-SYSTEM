@@ -50,3 +50,5 @@ class AuthController:
     def logout():
         logout_user()
         return True, "Logged out successfully."
+
+# Git simulation edit: doc_auth
