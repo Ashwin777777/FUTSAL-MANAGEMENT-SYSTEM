@@ -88,5 +88,51 @@ class FailingBookingTestCase(unittest.TestCase):
         )
         self.assertTrue(success2)
 
+    def test_expired_promo_code_discount_expectation(self):
+        """
+        Failing Test 3: Tries to apply an expired promo code and expects a discount.
+        The backend will correctly reject it (0.0 discount), causing this test to fail.
+        """
+        from app.controllers.booking_controller import BookingController
+        # Create an expired promo code
+        expired_promo = PromoCode(code="EXPIRED50", discount_percent=50, valid_until=date.today() - timedelta(days=5), active=True)
+        db.session.add(expired_promo)
+        db.session.commit()
+
+        booking_date = date(2026, 7, 6) # Monday
+        
+        pricing, err = BookingController.calculate_price(
+            court_id=self.court.id,
+            booking_date=booking_date,
+            start_time=12,
+            end_time=13,
+            promo_code_str="EXPIRED50"
+        )
+        self.assertIsNone(err)
+        
+        # INTENTIONAL FAILURE: Expecting Rs. 500.0 discount, but actual is Rs. 0.0
+        self.assertEqual(pricing['discount'], 500.0)
+
+    def test_insufficient_equipment_stock_success_expectation(self):
+        """
+        Failing Test 4: Attempts to rent more equipment than available stock, expecting success.
+        The backend will block it due to stock limits, causing this test to fail.
+        """
+        from app.controllers.booking_controller import BookingController
+        booking_date = date(2026, 7, 6)
+        
+        # Attempt to rent 10 shoes (stock is only 5)
+        # INTENTIONAL FAILURE: Expecting True, but actual is False
+        success, res = BookingController.create_booking(
+            user_id=self.customer.id,
+            court_id=self.court.id,
+            booking_date=booking_date,
+            start_time=12,
+            end_time=13,
+            rentals_data=[{'equipment_id': self.equipment.id, 'quantity': 10}],
+            payment_method="Cash"
+        )
+        self.assertTrue(success)
+
 if __name__ == '__main__':
     unittest.main()
